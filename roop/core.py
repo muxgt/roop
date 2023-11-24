@@ -20,7 +20,6 @@ import tensorflow
 import roop.globals
 import roop.metadata
 import roop.ui as ui
-from roop import gradio_ui
 from roop.predicter import predict_image, predict_video
 from roop.processors.frame.core import get_frame_processors_modules
 from roop.utilities import has_image_extension, is_image, is_video, detect_fps, create_video, extract_frames, get_temp_frame_paths, restore_audio, create_temp, move_temp, clean_temp, normalize_output_path
@@ -38,7 +37,6 @@ def parse_args() -> None:
     program.add_argument('-s', '--source', help='select an source image', dest='source_path')
     program.add_argument('-t', '--target', help='select an target image or video', dest='target_path')
     program.add_argument('-o', '--output', help='select output file or directory', dest='output_path')
-    program.add_argument('--gradio-ui', help='using gradio web ui', dest='gradio_ui', action='store_true', default=False)
     program.add_argument('--frame-processor', help='frame processors (choices: face_swapper, face_enhancer, ...)', dest='frame_processor', default=['face_swapper'], nargs='+')
     program.add_argument('--keep-fps', help='keep original fps', dest='keep_fps', action='store_true', default=False)
     program.add_argument('--keep-audio', help='keep original audio', dest='keep_audio', action='store_true', default=True)
@@ -56,7 +54,6 @@ def parse_args() -> None:
     roop.globals.source_path = args.source_path
     roop.globals.target_path = args.target_path
     roop.globals.output_path = normalize_output_path(roop.globals.source_path, roop.globals.target_path, args.output_path)
-    roop.globals.gradio_ui = args.gradio_ui
     roop.globals.frame_processors = args.frame_processor
     roop.globals.headless = args.source_path or args.target_path or args.output_path
     roop.globals.keep_fps = args.keep_fps
@@ -135,7 +132,7 @@ def pre_check() -> bool:
 
 def update_status(message: str, scope: str = 'ROOP.CORE') -> None:
     print(f'[{scope}] {message}')
-    if not roop.globals.headless and not roop.globals.gradio_ui:
+    if not roop.globals.headless:
         ui.update_status(message)
 
 
@@ -159,8 +156,8 @@ def start() -> None:
             update_status('Processing to image failed!')
         return
     # process image to videos
-    if predict_video(roop.globals.target_path):
-        destroy()
+    #if predict_video(roop.globals.target_path):
+    #    destroy()
     update_status('Creating temp resources...')
     create_temp(roop.globals.target_path)
     update_status('Extracting frames...')
@@ -213,10 +210,7 @@ def run() -> None:
     limit_resources()
     if roop.globals.headless:
         start()
-    elif roop.globals.gradio_ui:
-        demo = gradio_ui.init(start, destroy)
-        demo.queue()
-        demo.launch(share=True)
     else:
         window = ui.init(start, destroy)
         window.mainloop()
+
